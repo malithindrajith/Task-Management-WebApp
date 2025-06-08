@@ -80,3 +80,69 @@ task-management-webapp/
 └── package.json               # Or separate frontend/backend package.jsons
 
 
+SAMPLE CODE FOR THIS PROJECT 
+
+
+
+
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import jsPDF from "jspdf";
+
+const Tasks = () => {
+  const [tasks, setTasks] = useState([]);
+  const [form, setForm] = useState({ title: "", description: "", deadline: "" });
+
+  const fetchTasks = async () => {
+    const token = localStorage.getItem("token");
+    const res = await axios.get("/api/tasks", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setTasks(res.data);
+  };
+
+  const handleCreate = async () => {
+    const token = localStorage.getItem("token");
+    await axios.post("/api/tasks", form, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    setForm({ title: "", description: "", deadline: "" });
+    fetchTasks();
+  };
+
+  const downloadPDF = () => {
+    const doc = new jsPDF();
+    doc.text("Task List", 10, 10);
+    tasks.forEach((task, i) => {
+      doc.text(`${i + 1}. ${task.title} - ${task.status}`, 10, 20 + i * 10);
+    });
+    doc.save("task-report.pdf");
+  };
+
+  useEffect(() => {
+    fetchTasks();
+  }, []);
+
+  return (
+    <div className="p-4">
+      <h2 className="text-2xl font-bold mb-4">Tasks</h2>
+
+      <div className="mb-4">
+        <input placeholder="Title" value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="input" />
+        <input placeholder="Description" value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} className="input" />
+        <input type="date" value={form.deadline} onChange={e => setForm({ ...form, deadline: e.target.value })} className="input" />
+        <button onClick={handleCreate} className="btn mt-2">Create Task</button>
+      </div>
+
+      <button onClick={downloadPDF} className="btn mb-2">Download PDF</button>
+
+      <ul>
+        {tasks.map(task => (
+          <li key={task._id}>{task.title} — {task.status}</li>
+        ))}
+      </ul>
+    </div>
+  );
+};
+
+export default Tasks;
